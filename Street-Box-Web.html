@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GAME KOTAK</title>
+<style>
+  html, body{
+    overflow:hidden;
+    user-select:none;
+}
+body{
+    position:relative;
+    margin:0;
+    height:100vh;
+    width:100vw;
+    background:#94e7fb;
+    font-family:"Baloo Paaji 2";
+}
+#start{
+    position:relative;
+    height:100vh;
+    width:100vw;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+#lobby{
+    font-weight: bold;
+    font-size:1.6em;
+    color:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+#instruction{
+    font-weight: bold;
+    position:absolute;
+    padding:0 3% 2% 3%;
+    width:90%;
+    color:blue;
+    font-size:1.2em;
+    background:white;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, 100%);
+    border-radius:10px;
+    transition:transform 0.4s ease-in;
+}
+#gameField, #dashBoard, #gameOver{
+    display:none;    
+}
+#gameOver{
+    font-weight: bold;
+    height:100vh;
+    width:100vw;
+    font-size:1.6em;
+    color:Black;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+#dashBoard{
+    position:absolute;
+    width:100vw;
+    justify-content:space-between;
+    font-size:1.4em;
+    color:black;
+}
+#gameField{
+    position:relative;
+    top:50%;
+    left:0;
+    transform:translateY(-50%);
+    background:rgb(255,255,255);
+}
+#ball1, #ball2{
+    position:absolute;
+    height:20px;
+    width:20px;
+    transform:translate(-50%, -50%);
+    background:#fff963;
+    clip-path:circle(50%);
+}
+.obstacles{
+    position:absolute;
+    height:20px;
+    width:20px;
+    transform:translate(-50%, -50%);
+    background: red;
+}
+.collectables{
+    position:absolute;
+    height:20px;
+    width:20px;
+    transform:translate(-50%, -50%);
+    background: yellow;
+  
+}
+</style>
+</head>
+<body>
+ <div id="start"> 
+   <div id="lobby"> 
+    <h1>|<font color="#fff963">Street Box</font>|</h1> 
+    <p id="play">Mulai</p> 
+    <p id="help">Cara Main!</p> 
+   </div> 
+  </div> 
+  <div id="dashBoard"> 
+   <span id="Score"></span> 
+   <span id="Life"></span> 
+  </div> 
+  <div id="gameField"> 
+   <span id="ball1"></span> 
+   <span id="ball2"></span> 
+  </div> 
+  <div id="gameOver"> 
+   <h1>-Game Over-</h1> 
+   <p id="result"></p> 
+   <p id="replay">Ulanggi Game</p> 
+   <p id="help2">Bantuan!</p> 
+  </div> 
+  <div id="instruction"> 
+   <p align="right"> <i id="Close" class="fa fa-times" aria-hidden="true"></i> </p> 
+<ol>
+    <li> Ketuk pada layar untuk mengubah arah rotasi. </li>
+    <br/>
+    <li> Di pojok kanan atas, Anda dapat melihat 5 hati yang merupakan kesehatan Anda. </li>
+    <br/>
+    <li> Hindari blok merah atau satu kesehatan akan berkurang, ketika kesehatan mencapai nol, permainan berakhir. </li>
+    <br/>
+    <li> Kumpulkan balok kuning untuk meningkatkan skor.dan nyawa anda ada 5. </li>
+    <br/>
+     <li>Jika Terjadi Bug silahkan hubunggi 0831-5166-8985.</li>
+     <br/>
+     <li>Aplikasi ini akan di update 1 minggu sekali jadi tunggu kan update nya.</li>
+   </ol>
+  </div> 
+  <script>
+            help.addEventListener("click", ()=>{
+                instruction.style.transform="translate(-50%, -50%)";
+                });
+                help2.addEventListener("click", ()=>{
+                instruction.style.transform="translate(-50%, -50%)";
+            });
+            Close.addEventListener("click", ()=>{
+                instruction.style.transform="translate(-50%, 100%)";
+            });
+          var run, spawnTime;
+var go=0, turn=true;
+var w=innerWidth, h=200;
+var rd=Math.random() * Math.PI, vlc=0.04;
+
+var spawnAt=[30, 100, 170], spawnIn;
+var obstacles=[], collectables=[];
+var score=0, life=5;
+
+function dist(x1, y1, x2, y2){
+        xDist = x1 - x2;
+        yDist = y1 - y2;
+        
+        return Math.hypot(xDist,yDist);
+    }                
+function collide(x1, y1, r1, x2, y2, r2){
+        if(dist(x1, y1, x2, y2) < r1 + r2){
+            return true;
+        }
+        
+        else {
+            return false;
+        }
+    }
+class Obstacles{
+    constructor(x, y){
+        this.x=x;
+        this.y=y;
+        this.el;
+    }
+    Render(){
+        this.el=document.createElement("span");
+        this.el.setAttribute("class", "obstacles");
+        this.el.style.left=`${this.x}px`;
+        this.el.style.top=`${this.y}px`;
+        gameField.appendChild(this.el);
+    }
+    Run(){
+        this.x-=2;
+        this.el.style.top=`${this.y}px`;
+        this.el.style.left=`${this.x}px`;
+    }
+}
+class Collectables{
+    constructor(x, y){
+        this.x=x;
+        this.y=y;
+        this.el;
+    }
+    Render(){
+        this.el=document.createElement("span");
+        this.el.setAttribute("class", "collectables");
+        this.el.style.left=`${this.x}px`;
+        this.el.style.top=`${this.y}px`;
+        gameField.appendChild(this.el);
+    }
+    Run(){
+        this.x-=2;
+        this.el.style.top=`${this.y}px`;
+        this.el.style.left=`${this.x}px`;
+    }
+}
+window.onload=()=>{
+     Life.innerHTML=`<i class="fa fa-heart" aria-hidden="true"></i>`.repeat(life);
+     Score.innerHTML=`Skor:${score}`;
+     
+   function spawn(){
+   spawnIn=Math.floor(Math.random()*10);
+   if(!(spawnIn>=7)){
+       obstacles.push(new Obstacles((2*w)-(w/2), spawnAt[Math.floor(Math.random()*3)]));
+       obstacles[obstacles.length-1].Render();
+       }
+    else{
+        collectables.push(new Collectables((2*w)-(w/2), spawnAt[Math.floor(Math.random()*3)]));
+        collectables[collectables.length-1].Render();
+    }
+   } 
+   function change(){
+            if(turn==true){
+                turn=false;
+            }
+            else{
+                turn=true;
+            } 
+          }  
+    gameField.style.height=h+"px";
+    gameField.style.width=w+"px";
+    function animation(){
+        run=requestAnimationFrame(animation);
+        ball1.style.top=`${(h/2)+Math.cos(rd)*70}px`;
+        ball1.style.left=`${(w/2)+Math.sin(rd)*70}px`;
+        ball2.style.top=`${(h/2)-Math.cos(rd)*70}px`;
+        ball2.style.left=`${(w/2)-Math.sin(rd)*70}px`;
+        if(turn==true){
+            rd+=vlc;
+        }
+        else{
+            rd-=vlc;
+        }
+        for(var i in obstacles){
+            obstacles[i].Run();
+            
+            if(collide((w/2)+Math.sin(rd)*70, (h/2)+Math.cos(rd)*70, 10, obstacles[i].x, obstacles[i].y, 10) || collide((w/2)-Math.sin(rd)*70, (h/2)-Math.cos(rd)*70, 10, obstacles[i].x, obstacles[i].y, 10)){
+                                gameField.removeChild(obstacles[i].el);
+                obstacles.splice(i,1);
+                life-=1;
+                Life.innerHTML=`<i class="fa fa-heart" aria-hidden="true"></i>`.repeat(life);
+                if(life==0){
+                    stop();
+                    clearInterval(spawnTime);
+                    life=5;
+                    gameField.style.display="none";
+                    dashBoard.style.display="none";
+                    gameOver.style.display="flex";
+                    result.innerHTML=`Skor Kamu: ${score}`;
+                }
+            }
+            else if(obstacles[i].x<-10){
+                gameField.removeChild(obstacles[i].el);
+                obstacles.splice(i,1);
+            }
+        }
+        for(var i in collectables){
+            collectables[i].Run();
+            
+            if(collide((w/2)+Math.sin(rd)*70, (h/2)+Math.cos(rd)*70, 10, collectables[i].x, collectables[i].y, 10) || collide((w/2)-Math.sin(rd)*70, (h/2)-Math.cos(rd)*70, 10, collectables[i].x, collectables[i].y, 10)){
+                                gameField.removeChild(collectables[i].el);
+                collectables.splice(i,1);
+                score+=1;
+                Score.innerHTML=`Skor:${score}`;
+            }
+            else if(collectables[i].x<-10){
+                gameField.removeChild(collectables[i].el);
+                collectables.splice(i,1);
+            }
+        }
+    }
+function stop(){
+    cancelAnimationFrame(run)
+}
+play.addEventListener("click", ()=>{
+    start.style.display="none";
+    dashBoard.style.display="flex";
+    gameField.style.display="block";
+    spawnTime=setInterval(spawn,2000);
+    onclick=change;
+    animation();
+    
+
+    })
+replay.addEventListener("click", ()=>{
+    score=0;
+    Score.innerHTML=`Skor: ${score}`;
+    Life.innerHTML=`<i class="fa fa-heart" aria-hidden="true"></i>`.repeat(life);
+    gameOver.style.display="none"
+    dashBoard.style.display="flex";
+    gameField.style.display="block";
+    spawnTime=setInterval(spawn,2000);
+    onclik=change;
+    animation();
+})
+}
+        </script> 
+</body>
+</html>
